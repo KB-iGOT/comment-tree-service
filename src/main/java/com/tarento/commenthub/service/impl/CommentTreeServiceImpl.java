@@ -112,7 +112,6 @@ public class CommentTreeServiceImpl implements CommentTreeService {
         return response;
       }
       log.info("CommentTreeService::getCommentTree:not found");
-      response.setResponseCode(HttpStatus.NOT_FOUND);
       response.put("message", "Comment Tree not found");
     } catch (Exception e) {
       log.error("Error while fetching Comment Tree: {}", e);

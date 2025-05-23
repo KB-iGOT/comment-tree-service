@@ -1,7 +1,11 @@
 package com.tarento.commenthub.service.impl;
 
+import static com.tarento.commenthub.constant.Constants.COMMENT_TREE_REDIS_KEY;
+
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -93,11 +97,27 @@ public class CommentTreeServiceImpl implements CommentTreeService {
       String commentTreeId = generateJwtTokenKey(commentTreeIdentifierDTO);
       // Check if the value is a Map or needs deserialization
       // Retrieve the value from Redis
-      Map<String, Object> resultMap = (Map<String, Object>) redisTemplate.opsForValue()
-          .get(Constants.COMMENT_TREE_REDIS_KEY + commentTreeId);
-      if (resultMap != null) {
+      Map<String, Object> resultMap = new HashMap<>();
+      try {
+        // Retrieve JSON string from Redis
+        String resultMapJson = (String) redisTemplate.opsForValue()
+            .get(Constants.COMMENT_TREE_REDIS_KEY + commentTreeId);
+
+        if (resultMapJson != null) {
+          // Deserialize JSON string to Map
+          resultMap = objectMapper.readValue(resultMapJson,
+              new TypeReference<Map<String, Object>>() {
+              });
+        }
+        // Deserialize JSON string to Map
+      } catch (JsonProcessingException e) {
+        log.error("Error deserializing JSON from Redis", e);
+        throw new RuntimeException("Failed to deserialize JSON", e);
+      }
+
+      if (resultMap != null && !resultMap.isEmpty()) {
         log.info("CommentTreeService::getCommentTree:found in redis");
-        response.setResult(resultMap);
+        response.setResult(new HashMap<>(resultMap));
         return response;
       }
       Optional<CommentTree> optionalCommentTree = commentTreeRepository.findById(commentTreeId);
@@ -105,10 +125,15 @@ public class CommentTreeServiceImpl implements CommentTreeService {
         log.info("CommentTreeService::getCommentTree:fetching from postgre");
         resultMap = objectMapper.convertValue(
             optionalCommentTree.get().getCommentTreeData(), Map.class);
-        response.setResult(resultMap);
+
+        // Serialize resultMap to JSON
+        String resultMapJson = objectMapper.writeValueAsString(resultMap);
+
+        // Store the serialized JSON in Redis
         redisTemplate.opsForValue()
-            .set(Constants.COMMENT_TREE_REDIS_KEY + commentTreeId, resultMap, redisTtl,
+            .set(Constants.COMMENT_TREE_REDIS_KEY + commentTreeId, resultMapJson, redisTtl,
                 TimeUnit.SECONDS);
+        response.setResult(resultMap);
         return response;
       }
       log.info("CommentTreeService::getCommentTree:not found");

@@ -12,8 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Enumeration;
 
 @RestController
 @RequestMapping("commentTree/v1")
@@ -29,7 +32,17 @@ public class CommentTreeController {
   }
 
   @PostMapping("/get")
-  public ResponseEntity<?> search(@RequestBody CommentTreeIdentifierDTO commentTreeIdentifierDTO) {
+  public ResponseEntity<?> search(@RequestBody CommentTreeIdentifierDTO commentTreeIdentifierDTO,
+                                HttpServletRequest request) {
+    // Method 1: Print all headers using HttpServletRequest
+    log.info("=== Printing all request headers ===");
+    Enumeration<String> headerNames = request.getHeaderNames();
+    while (headerNames.hasMoreElements()) {
+      String headerName = headerNames.nextElement();
+      String headerValue = request.getHeader(headerName);
+      log.info("Header: {} = {}", headerName, headerValue);
+    }
+    
     ApiResponse response = commentTreeService.getCommentTree(commentTreeIdentifierDTO);
     if (response.getResponseCode().equals(HttpStatus.NOT_FOUND) && response.getResult().isEmpty()) {
       return new ResponseEntity<>(response, HttpStatus.OK);

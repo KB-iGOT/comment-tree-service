@@ -11,10 +11,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("Status enum – 100% Coverage Tests")
 class StatusTest {
 
-    // =========================================================================
-    // 1. Enum constants – identity and position
-    // =========================================================================
-
     @Nested
     @DisplayName("Enum constants")
     class ConstantTests {
@@ -42,10 +38,6 @@ class StatusTest {
         }
     }
 
-    // =========================================================================
-    // 2. values() – covers the synthetic static method
-    // =========================================================================
-
     @Nested
     @DisplayName("values()")
     class ValuesTests {
@@ -61,7 +53,7 @@ class StatusTest {
     }
 
     // =========================================================================
-    // 3. valueOf(String) – covers the synthetic static method
+    // valueOf(String) – covers the synthetic static method
     // =========================================================================
 
     @Nested
